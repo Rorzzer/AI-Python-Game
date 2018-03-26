@@ -2,7 +2,9 @@
 
 **COMP30024** *Artificial Intelligence*
 
-Sarah Erfani, Matt Farrugia, Chris Leckie (*March 12, 2018*)
+Rory Powell, Kolatat Thangkasemvathana
+
+Project Specs: Sarah Erfani, Matt Farrugia, Chris Leckie (*March 12, 2018*)
 
 ## Rules of the Game
 
