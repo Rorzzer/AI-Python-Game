@@ -17,7 +17,7 @@ def main(argv):
 
     # loads the board
     board = watchurback.get_board_from_file(input_file)
-    board.print_board()
+    # board.print_board()
 
     action = input_file.readline().strip().upper()
     actions = {
