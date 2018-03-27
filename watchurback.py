@@ -42,24 +42,29 @@ class BlankBoard:
             return False
         return self.board[y][x] == EMPTY
 
-    def get_valid_moves(self, x: int, y: int):
+    def get_valid_moves(self, xy: tuple):
         valid = []
         # TODO ugly write better pls
+        x = xy[0]
+        y = xy[1]
         # north
         if self.is_cell_valid(x, y - 1):
             valid.append((x, y - 1))
         elif self.is_cell_valid(x, y - 2):
             valid.append((x, y - 2))
+
         # east
         if self.is_cell_valid(x + 1, y):
             valid.append((x + 1, y))
         elif self.is_cell_valid(x + 2, y):
             valid.append((x + 2, y))
+
         # south
         if self.is_cell_valid(x, y + 1):
             valid.append((x, y + 1))
         elif self.is_cell_valid(x, y + 2):
             valid.append((x, y + 2))
+
         # west
         if self.is_cell_valid(x - 1, y):
             valid.append((x - 1, y))
