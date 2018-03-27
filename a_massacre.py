@@ -16,19 +16,20 @@ corner4 = (7, 7)
 def on_action(action: str, board: watchurback.BlankBoard):
     # TODO
 
-    #piece = 0
 
     # WILL EVENTUALLY NEED A get_corners() method
     # def get_corners(...
 
+    # for each white piece
     for ii in board.index_white:
         moves = board.get_valid_moves(ii)
-        piece = 0
         # move_status = (piece, can_take(ii), is_vuln(ii), next_to_white(ii), avg_dist_to_black(ii))
+
+        # for each move of each piece
         for jj in moves:
             print("Moving piece:", ii, " to:", jj)
-            print("Can take: ",can_take_total(board, jj), " pieces")
-            piece += 1
+            print("Can take: ", can_take_total(board, jj), " pieces")
+            print("Is vulnerable: ", is_vulnerable(board, jj))
             #import pdb; pdb.set_trace()
 
     print('MASSACRE still being implemented.')
@@ -64,8 +65,13 @@ def is_vulnerable(board: watchurback.BlankBoard, xy: tuple):
     x = xy[0]
     y = xy[1]
 
-    return True
-    # return next_to(BLACK, board, x, y) and two_spaces_away(WHITE, board, x, y)
+    if check_left(1, BLACK, board, x, y) and check_right(1, BLACK, board, x, y):
+        return True
+
+    if check_up(1, BLACK, board, x, y) and check_down(1, BLACK, board, x, y):
+        return True
+
+    return False
 
 
 def check_left(distance, colour, board: watchurback.BlankBoard, x, y):
@@ -73,12 +79,16 @@ def check_left(distance, colour, board: watchurback.BlankBoard, x, y):
 
     if colour == BLACK:
         for ii in board.index_black:
-            if ((x - distance), y) == (ii[0], ii[1]):
+            if ((x - distance), y) == (ii[0], ii[1]) or \
+                    ((x - distance), y) == corner1 or \
+                    ((x - distance), y) == corner3:
                 return True
         return False
     elif colour == WHITE:
         for ii in board.index_white:
-            if ((x - distance), y) == (ii[0], ii[1]):
+            if ((x - distance), y) == (ii[0], ii[1]) or \
+                    ((x - distance), y) == corner1 or \
+                    ((x - distance), y) == corner3:
                 return True
         return False
 
@@ -88,12 +98,16 @@ def check_right(distance, colour, board: watchurback.BlankBoard, x, y):
 
     if colour == BLACK:
         for ii in board.index_black:
-            if ((x + distance), y) == (ii[0], ii[1]):
+            if ((x + distance), y) == (ii[0], ii[1]) or \
+                    ((x + distance), y) == corner2 or \
+                    ((x + distance), y) == corner4:
                 return True
         return False
     elif colour == WHITE:
         for ii in board.index_white:
-            if ((x + distance), y) == (ii[0], ii[1]):
+            if ((x + distance), y) == (ii[0], ii[1]) or \
+                    ((x + distance), y) == corner2 or \
+                    ((x + distance), y) == corner4:
                 return True
         return False
 
@@ -103,12 +117,16 @@ def check_up(distance, colour, board: watchurback.BlankBoard, x, y):
 
     if colour == BLACK:
         for ii in board.index_black:
-            if (x, (y - distance)) == (ii[0], ii[1]):
+            if (x, (y - distance)) == (ii[0], ii[1]) or \
+                    (x, (y - distance)) == corner1 or \
+                    (x, (y - distance)) == corner2:
                 return True
         return False
     elif colour == WHITE:
         for ii in board.index_white:
-            if (x, (y - distance)) == (ii[0], ii[1]):
+            if (x, (y - distance)) == (ii[0], ii[1])or \
+                    (x, (y - distance)) == corner1 or \
+                    (x, (y - distance)) == corner2:
                 return True
         return False
 
@@ -118,13 +136,17 @@ def check_down(distance, colour, board: watchurback.BlankBoard, x, y):
 
     if colour == BLACK:
         for ii in board.index_black:
-            if (x, (y + distance)) == (ii[0], ii[1]):
+            if (x, (y + distance)) == (ii[0], ii[1]) or \
+                    (x, (y + distance)) == corner3 or \
+                    (x, (y + distance)) == corner4:
                 return True
         return False
 
     elif colour == WHITE:
         for ii in board.index_white:
-            if (x, (y + distance)) == (ii[0], ii[1]):
+            if (x, (y + distance)) == (ii[0], ii[1]) or \
+                    (x, (y + distance)) == corner3 or \
+                    (x, (y + distance)) == corner4:
                 return True
         return False
 
