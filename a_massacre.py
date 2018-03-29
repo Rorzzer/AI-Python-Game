@@ -21,7 +21,14 @@ corner4 = (7, 7)
 def on_action(action: str, board: watchurback.BlankBoard):
     # TODO
     board.print_board()
-    print(board.get_min_dist((4, 3), (0, 3)))
+    print("Whites: ", board.index_white)
+    print("Blacks: ", board.index_black)
+
+    board.move((2, 3), (3, 3))
+
+    board.print_board()
+    print("Whites: ", board.index_white)
+    print("Blacks: ", board.index_black)
 
     counter = 0
 
@@ -29,6 +36,7 @@ def on_action(action: str, board: watchurback.BlankBoard):
     # def get_corners(...
 
     # for each white piece
+    return
     for ii in board.index_white:
         # move_status = (piece, can_take(ii), is_vuln(ii), next_to_count(ii), avg_MHdist_to_black(ii))
 

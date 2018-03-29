@@ -6,6 +6,35 @@ WHITE = 'O'
 BLACK = '@'
 EMPTY = '-'
 
+Coord = typing.Tuple[int, int]
+
+
+# coord helpers
+def dx(coord: Coord, dx: int):
+    (x, y) = coord
+    return (x + dx, y)
+
+
+def dy(coord: Coord, dy: int):
+    (x, y) = coord
+    return (x, y + dy)
+
+
+def north(coord: Coord, d: int = 1):
+    return dy(coord, -d)
+
+
+def south(coord: Coord, d: int = 1):
+    return dy(coord, d)
+
+
+def west(coord: Coord, d: int = 1):
+    return dx(coord, -d)
+
+
+def east(coord: Coord, d: int = 1):
+    return dx(coord, d)
+
 
 class BlankBoard:
     board = []
@@ -23,61 +52,54 @@ class BlankBoard:
         # if len(line) != self.size:
         # WARNING incorrect size!
         for x in range(self.size):
-            self.set_cell(x, y, line[x])
+            self.set_cell((x, y), line[x])
 
-    def set_cell(self, x: int, y: int, piece: str):
+    def set_cell(self, coord: Coord, piece: str):
+        (x, y) = coord
         if (x == 0 or x == self.size - 1) and (y == 0 or y == self.size - 1):
             return
         # if piece not in [EMPTY, BLACK, WHITE]:
         # WARNING illegal piece
-        # also should not place anything on a non-empty cell
         self.board[y][x] = piece
         if piece == WHITE:
             self.index_white.append((x, y))
         elif piece == BLACK:
             self.index_black.append((x, y))
+        elif piece == EMPTY:
+            # suppress ValueError because remove is noisy when index doesnt exist
+            from contextlib import suppress
+            with suppress(ValueError):
+                self.index_white.remove(coord)
+            with suppress(ValueError):
+                self.index_black.remove(coord)
 
-    def is_cell_valid(self, x: int, y: int):
+    def is_cell_valid(self, coord: Coord):
+        (x, y) = coord
         # here (x,y) may be dum values
         if x not in range(self.size) or y not in range(self.size):
             return False
         return self.board[y][x] == EMPTY
 
-    def get_valid_moves(self, xy: tuple):
+    def get_valid_moves(self, coord: Coord):
         valid = []
-        # TODO ugly write better pls
-        x = xy[0]
-        y = xy[1]
-        # north
-        if self.is_cell_valid(x, y - 1):
-            valid.append((x, y - 1))
-        elif self.is_cell_valid(x, y - 2):
-            valid.append((x, y - 2))
-
-        # east
-        if self.is_cell_valid(x + 1, y):
-            valid.append((x + 1, y))
-        elif self.is_cell_valid(x + 2, y):
-            valid.append((x + 2, y))
-
-        # south
-        if self.is_cell_valid(x, y + 1):
-            valid.append((x, y + 1))
-        elif self.is_cell_valid(x, y + 2):
-            valid.append((x, y + 2))
-
-        # west
-        if self.is_cell_valid(x - 1, y):
-            valid.append((x - 1, y))
-        elif self.is_cell_valid(x - 2, y):
-            valid.append((x - 2, y))
+        # try walk, else then try jump
+        for rel_func in [north, east, south, west]:
+            # try walk
+            rel_coord = rel_func(coord)
+            if self.is_cell_valid(rel_coord):
+                valid.append(rel_coord)
+            else:
+                # then try jump
+                rel_coord = rel_func(coord, 2)
+                if self.is_cell_valid(rel_coord):
+                    valid.append(rel_coord)
         return valid
 
     def print_board(self):
         for row in self.board:
             print(' '.join(row))
 
-    def get_min_dist(self, coord_from: typing.Tuple[int, int], coord_to: typing.Tuple[int, int]):
+    def get_min_dist(self, coord_from: Coord, coord_to: Coord):
         """return a tuple (route, distance) of the shortest route from to to"""
 
         # apapted from http://eddmann.com/posts/using-iterative-deepening-depth-first-search-in-python/
@@ -100,6 +122,26 @@ class BlankBoard:
                 return (route, len(route) - 1)
         return ([], math.inf)
 
+    def get_piece(self, coord: Coord):
+        (x, y) = coord
+        return self.board[y][x]
+
+    def move(self, coord_from: Coord, coord_to: Coord, require_player: str = None):
+        """move piece and validate move"""
+        # TODO still missing validation for walk/jump size
+        player = self.get_piece(coord_from)
+        if not player:
+            # we cannot move nothing!
+            return False
+        if require_player and player is not require_player:
+            return False
+        if not self.is_cell_valid(coord_to):
+            return False
+        # preliminary tests passed, now move
+        # set_cell deals with indexing so no worries here
+        self.set_cell(coord_from, EMPTY)
+        self.set_cell(coord_to, player)
+
 
 def get_board_from_file(file: typing.TextIO, size: int = None):
     firstline = file.readline().strip().split(' ')
@@ -110,6 +152,3 @@ def get_board_from_file(file: typing.TextIO, size: int = None):
     for y in range(1, size):
         board.set_row(y, file.readline().strip().split(' '))
     return board
-
-
-7
