@@ -20,6 +20,8 @@ corner4 = (7, 7)
 
 def on_action(action: str, board: watchurback.BlankBoard):
     # TODO
+    board.print_board()
+    print(board.get_min_dist((4, 3), (0, 3)))
 
     counter = 0
 

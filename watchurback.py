@@ -1,3 +1,4 @@
+import math
 import typing
 
 CORNER = 'X'
@@ -76,6 +77,29 @@ class BlankBoard:
         for row in self.board:
             print(' '.join(row))
 
+    def get_min_dist(self, coord_from: typing.Tuple[int, int], coord_to: typing.Tuple[int, int]):
+        """return a tuple (route, distance) of the shortest route from to to"""
+
+        # apapted from http://eddmann.com/posts/using-iterative-deepening-depth-first-search-in-python/
+        def dfs(route, depth):
+            if depth == 0:
+                return
+            if route[-1] == coord_to:
+                return route
+            for move in self.get_valid_moves(route[-1]):
+                if move not in route:
+                    next_route = dfs(route + [move], depth - 1)
+                    if next_route:
+                        return next_route
+
+        # it is possible that a route not exist so we limit to
+        # 25 (just some arbitrary number)
+        for depth in range(25):
+            route = dfs([coord_from], depth)
+            if route:
+                return (route, len(route) - 1)
+        return ([], math.inf)
+
 
 def get_board_from_file(file: typing.TextIO, size: int = None):
     firstline = file.readline().strip().split(' ')
@@ -86,3 +110,6 @@ def get_board_from_file(file: typing.TextIO, size: int = None):
     for y in range(1, size):
         board.set_row(y, file.readline().strip().split(' '))
     return board
+
+
+7
