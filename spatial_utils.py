@@ -1,39 +1,41 @@
-import typing
+from collections import namedtuple
 from enum import Enum
 
 
+class Coord(namedtuple('Coord', ['x', 'y'])):
+    def __add__(self, other):
+        return Coord(self.x + other.x, self.y + other.y)
+
+    def __mul__(self, other):
+        # optimise???
+        if other == 1:
+            return self
+        return Coord(self.x * other, self.y * other)
+
+    def add_x(self, x: int):
+        return self + Coord(x, 0)
+
+    def add_y(self, y: int):
+        return self + Coord(0, y)
+
+    def is_adjacent(self, to):
+        dx = abs(self.x-to.x)
+        dy=abs(self.y-to.y)
+        return (dx==1 and dy==0) or (dx==0 and dy==1)
+
+
+
 class Direction(Enum):
-    UP = (0, -1)
-    DOWN = (0, 1)
-    LEFT = (-1, 0)
-    RIGHT = (1, 0)
+    UP = Coord(0, -1)
+    DOWN = Coord(0, 1)
+    LEFT = Coord(-1, 0)
+    RIGHT = Coord(1, 0)
 
 
-Coord = typing.Tuple[int, int]
+HORIZONTAL_PAIR = [Direction.LEFT, Direction.RIGHT]
+VERTICAL_PAIR = [Direction.UP, Direction.DOWN]
+PAIRS = [HORIZONTAL_PAIR, VERTICAL_PAIR]
 
 
-def add(u: Coord, v: Coord):
-    (ux, uy) = u
-    (vx, vy) = v
-    return ux + vx, uy + vy
-
-
-def scale(u: Coord, factor: int):
-    # optimise???
-    if factor == 1:
-        return u
-    (x, y) = u
-    return x * factor, y * factor
-
-
-# coord helpers
-def add_x(coord: Coord, x: int):
-    return add(coord, (x, 0))
-
-
-def add_y(coord: Coord, y: int):
-    return add(coord, (0, y))
-
-
-def add_direction(u: Coord, direction: Direction, how_much: int = 1):
-    return add(u, scale(direction.value, how_much))
+def add_direction(coord: Coord, direction: Direction, how_much: int = 1):
+    return coord + (direction.value * how_much)

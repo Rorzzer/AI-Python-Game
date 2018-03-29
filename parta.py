@@ -4,7 +4,7 @@
 # TEAM ...
 
 import sys
-import watchurback
+from watchurback import Board
 import a_massacre
 import a_moves
 
@@ -16,7 +16,7 @@ def main(argv):
         input_file = open(argv[0])
 
     # loads the board
-    board = watchurback.get_board_from_file(input_file)
+    board = Board.from_file(input_file)
     # board.print_board()
 
     action = input_file.readline().strip().upper()
@@ -28,7 +28,7 @@ def main(argv):
     func(action, board)
 
 
-def default_action(action: str, board: watchurback.Board):
+def default_action(action: str, board: Board):
     print('Unknown action command ' + action)
     print('Just have a look at the board:')
     board.print_board()
