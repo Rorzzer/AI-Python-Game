@@ -18,18 +18,8 @@ corner4 = (7, 7)
 # currentpiece = (0,0)
 
 
-def on_action(action: str, board: watchurback.BlankBoard):
+def on_action(action: str, board: watchurback.Board):
     # TODO
-    board.print_board()
-    print("Whites: ", board.index_white)
-    print("Blacks: ", board.index_black)
-
-    board.move((2, 3), (3, 3))
-
-    board.print_board()
-    print("Whites: ", board.index_white)
-    print("Blacks: ", board.index_black)
-
     counter = 0
 
     # WILL EVENTUALLY NEED A get_corners() method
@@ -58,7 +48,7 @@ def on_action(action: str, board: watchurback.BlankBoard):
     print('MASSACRE still being implemented.')
 
 
-def can_elim_count(board: watchurback.BlankBoard, indexblack, xy: tuple):
+def can_elim_count(board: watchurback.Board, indexblack, xy: tuple):
     x = xy[0]
     y = xy[1]
     total = 0
@@ -85,7 +75,7 @@ def can_elim_count(board: watchurback.BlankBoard, indexblack, xy: tuple):
     return total
 
 
-def is_surrounded(board: watchurback.BlankBoard, index, xy: tuple):
+def is_surrounded(board: watchurback.Board, index, xy: tuple):
     # checks if a piece is surrounded after making the move
     x = xy[0]
     y = xy[1]
@@ -95,7 +85,7 @@ def is_surrounded(board: watchurback.BlankBoard, index, xy: tuple):
             can_elim_count(board, index, xy) < 3)
 
 
-def next_to_count(colour, board: watchurback.BlankBoard, indexblack, xy: tuple):
+def next_to_count(colour, board: watchurback.Board, indexblack, xy: tuple):
     # counts the number of neighbouring pieces of a certain colour
     x = xy[0]
     y = xy[1]
@@ -119,7 +109,7 @@ def next_to_count(colour, board: watchurback.BlankBoard, indexblack, xy: tuple):
         return total - can_elim_count(board, indexblack, xy)
 
 
-def check_left(distance, colour, board: watchurback.BlankBoard, indexblack, x, y):
+def check_left(distance, colour, board: watchurback.Board, indexblack, x, y):
     # returns true if piece to the left
 
     if colour == BLACK:
@@ -130,7 +120,7 @@ def check_left(distance, colour, board: watchurback.BlankBoard, indexblack, x, y
                 return True
         return False
     elif colour == WHITE:
-        for ii in board.index_white:
+        for ii in board.__index_white:
             if ((x - distance), y) == (ii[0], ii[1]) or \
                     ((x - distance), y) == corner1 or \
                     ((x - distance), y) == corner3:
@@ -138,7 +128,7 @@ def check_left(distance, colour, board: watchurback.BlankBoard, indexblack, x, y
         return False
 
 
-def check_right(distance, colour, board: watchurback.BlankBoard, indexblack, x, y):
+def check_right(distance, colour, board: watchurback.Board, indexblack, x, y):
     # returns true if piece to the right
 
     if colour == BLACK:
@@ -149,7 +139,7 @@ def check_right(distance, colour, board: watchurback.BlankBoard, indexblack, x, 
                 return True
         return False
     elif colour == WHITE:
-        for ii in board.index_white:
+        for ii in board.__index_white:
             if ((x + distance), y) == (ii[0], ii[1]) or \
                     ((x + distance), y) == corner2 or \
                     ((x + distance), y) == corner4:
@@ -157,7 +147,7 @@ def check_right(distance, colour, board: watchurback.BlankBoard, indexblack, x, 
         return False
 
 
-def check_up(distance, colour, board: watchurback.BlankBoard, indexblack, x, y):
+def check_up(distance, colour, board: watchurback.Board, indexblack, x, y):
     # returns true if piece above
 
     if colour == BLACK:
@@ -168,7 +158,7 @@ def check_up(distance, colour, board: watchurback.BlankBoard, indexblack, x, y):
                 return True
         return False
     elif colour == WHITE:
-        for ii in board.index_white:
+        for ii in board.__index_white:
             if (x, (y - distance)) == (ii[0], ii[1]) or \
                     (x, (y - distance)) == corner1 or \
                     (x, (y - distance)) == corner2:
@@ -176,7 +166,7 @@ def check_up(distance, colour, board: watchurback.BlankBoard, indexblack, x, y):
         return False
 
 
-def check_down(distance, colour, board: watchurback.BlankBoard, indexblack, x, y):
+def check_down(distance, colour, board: watchurback.Board, indexblack, x, y):
     # returns true if piece below
 
     if colour == BLACK:
@@ -188,7 +178,7 @@ def check_down(distance, colour, board: watchurback.BlankBoard, indexblack, x, y
         return False
 
     elif colour == WHITE:
-        for ii in board.index_white:
+        for ii in board.__index_white:
             if (x, (y + distance)) == (ii[0], ii[1]) or \
                     (x, (y + distance)) == corner3 or \
                     (x, (y + distance)) == corner4:
