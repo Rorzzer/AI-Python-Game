@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Moves 3" type="PythonConfigurationType" factoryName="Python" folderName="Part A Moves">
+  <configuration default="false" name="Massacre 5" type="PythonConfigurationType" factoryName="Python" folderName="Part A Massacre">
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
@@ -13,7 +13,7 @@
     <module name="comp30024-ai" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="parta.py" />
-    <option name="PARAMETERS" value="sample_files/move-sample-3.in" />
+    <option name="PARAMETERS" value="sample_files/massacre-sample-5.in" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

@@ -19,10 +19,12 @@ class Coord(namedtuple('Coord', ['x', 'y'])):
         return self + Coord(0, y)
 
     def is_adjacent(self, to):
-        dx = abs(self.x-to.x)
-        dy=abs(self.y-to.y)
-        return (dx==1 and dy==0) or (dx==0 and dy==1)
+        dx = abs(self.x - to.x)
+        dy = abs(self.y - to.y)
+        return (dx == 1 and dy == 0) or (dx == 0 and dy == 1)
 
+    def __str__(self):
+        return '(' + str(self.x) + ', ' + str(self.y) + ')'
 
 
 class Direction(Enum):

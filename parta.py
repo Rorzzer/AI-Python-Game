@@ -4,9 +4,10 @@
 # TEAM ...
 
 import sys
-from watchurback import Board
+
 import a_massacre
 import a_moves
+from watchurback import Board
 
 
 def main(argv):
