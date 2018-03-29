@@ -1,54 +1,29 @@
 import math
-import typing
+from typing import List, TextIO
+
+from spatial_utils import Coord, Direction, add_direction
 
 CORNER = 'X'
 WHITE = 'O'
 BLACK = '@'
 EMPTY = '-'
 
-Coord = typing.Tuple[int, int]
-
-
-# coord helpers
-def dx(coord: Coord, dx: int):
-    (x, y) = coord
-    return (x + dx, y)
-
-
-def dy(coord: Coord, dy: int):
-    (x, y) = coord
-    return (x, y + dy)
-
-
-def north(coord: Coord, d: int = 1):
-    return dy(coord, -d)
-
-
-def south(coord: Coord, d: int = 1):
-    return dy(coord, d)
-
-
-def west(coord: Coord, d: int = 1):
-    return dx(coord, -d)
-
-
-def east(coord: Coord, d: int = 1):
-    return dx(coord, d)
+Piece = str
 
 
 class BlankBoard:
-    board = []
-    size = 0
+    board: List[List[Piece]] = []
+    size: int = 0
 
-    index_white = []
-    index_black = []
+    index_white: List[Coord] = []
+    index_black: List[Coord] = []
 
     def __init__(self, size: int = 8):
         self.size = size
         self.board = [[EMPTY for _ in range(size)] for _ in range(size)]
         self.board[0][0] = self.board[0][-1] = self.board[-1][0] = self.board[-1][-1] = CORNER
 
-    def set_row(self, y: int, line: typing.List[str]):
+    def set_row(self, y: int, line: List[str]):
         # if len(line) != self.size:
         # WARNING incorrect size!
         for x in range(self.size):
@@ -83,14 +58,14 @@ class BlankBoard:
     def get_valid_moves(self, coord: Coord):
         valid = []
         # try walk, else then try jump
-        for rel_func in [north, east, south, west]:
+        for direction in Direction:
             # try walk
-            rel_coord = rel_func(coord)
+            rel_coord = add_direction(coord, direction)
             if self.is_cell_valid(rel_coord):
                 valid.append(rel_coord)
             else:
                 # then try jump
-                rel_coord = rel_func(coord, 2)
+                rel_coord = add_direction(coord, direction, 2)
                 if self.is_cell_valid(rel_coord):
                     valid.append(rel_coord)
         return valid
@@ -102,15 +77,15 @@ class BlankBoard:
     def get_min_dist(self, coord_from: Coord, coord_to: Coord):
         """return a tuple (route, distance) of the shortest route from to to"""
 
-        # apapted from http://eddmann.com/posts/using-iterative-deepening-depth-first-search-in-python/
-        def dfs(route, depth):
-            if depth == 0:
+        # adapted from http://eddmann.com/posts/using-iterative-deepening-depth-first-search-in-python/
+        def dfs(inner_route: List[Coord], inner_depth: int):
+            if inner_depth == 0:
                 return
-            if route[-1] == coord_to:
-                return route
-            for move in self.get_valid_moves(route[-1]):
-                if move not in route:
-                    next_route = dfs(route + [move], depth - 1)
+            if inner_route[-1] == coord_to:
+                return inner_route
+            for move in self.get_valid_moves(inner_route[-1]):
+                if move not in inner_route:
+                    next_route = dfs(inner_route + [move], inner_depth - 1)
                     if next_route:
                         return next_route
 
@@ -119,8 +94,8 @@ class BlankBoard:
         for depth in range(25):
             route = dfs([coord_from], depth)
             if route:
-                return (route, len(route) - 1)
-        return ([], math.inf)
+                return route, len(route) - 1
+        return [], math.inf
 
     def get_piece(self, coord: Coord):
         (x, y) = coord
@@ -143,12 +118,12 @@ class BlankBoard:
         self.set_cell(coord_to, player)
 
 
-def get_board_from_file(file: typing.TextIO, size: int = None):
-    firstline = file.readline().strip().split(' ')
+def get_board_from_file(file: TextIO, size: int = None):
+    first_line = file.readline().strip().split(' ')
     if size is None:
-        size = len(firstline)
+        size = len(first_line)
     board = BlankBoard(size)
-    board.set_row(0, firstline)
+    board.set_row(0, first_line)
     for y in range(1, size):
         board.set_row(y, file.readline().strip().split(' '))
     return board
