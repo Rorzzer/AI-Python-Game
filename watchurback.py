@@ -26,6 +26,7 @@ class Board:
     def __init__(self):
         self._board: List[List[Piece]] = []
         self._size: int = 0
+        self._start: int = 0
 
         self._index_white: List[Coord] = []
         self._index_black: List[Coord] = []
@@ -43,8 +44,37 @@ class Board:
         board = Board()
         board._size = size
         board._board = [[EMPTY for _ in range(size)] for _ in range(size)]
-        board._board[0][0] = board._board[0][-1] = board._board[-1][0] = board._board[-1][-1] = CORNER
+        board._set_corners()
         return board
+
+    def _set_corners(self):
+        s = self._start
+        e = self._size-s-1
+        for y,x in [(s,s), (s,e), (e,s), (e,e)]:
+            self._board[y][x]  = CORNER
+
+    def shrink(self):
+        s = self._start
+        e = self._size-s-1
+        elim_list = [Coord(s+1,s+1),Coord(s+1,e-1),Coord(e-1,s+1),Coord(e-1,e-1)]
+        for x in range(s,e):
+            elim_list += [Coord(s,x), Coord(e,x), Coord(x,s), Coord(x,e)]
+        for coord in elim_list:
+            piece = self.get_piece(coord)
+            if piece in [BLACK,WHITE]:
+                self.index(piece).remove(coord)
+            self._board[coord.y][coord.x] = EMPTY
+        self._start+=1
+        self._set_corners()
+        s+=1
+        e-=1
+        # New corner squares eliminate nearby pieces
+        # in order starting with the top-left new corner square and proceeding counter-clockwise
+        # around the board.
+        elim_list = [Coord(s+1,s),Coord(s,s+1),Coord(s,e-1),Coord(s,e),Coord(e-1,e),Coord(e,e-1),Coord(e,s+1),Coord(e-1,s)]
+        for coord in elim_list:
+            if self.can_elim(coord):
+                self._set_cell(coord, EMPTY)
 
     @classmethod
     def from_file(cls, file: TextIO, size: int = None):
