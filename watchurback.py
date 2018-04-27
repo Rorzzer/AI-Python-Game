@@ -57,7 +57,7 @@ class Board:
         s = self._start
         e = self._size-s-1
         elim_list = [Coord(s+1,s+1),Coord(s+1,e-1),Coord(e-1,s+1),Coord(e-1,e-1)]
-        for x in range(s,e):
+        for x in range(s,e+1):
             elim_list += [Coord(s,x), Coord(e,x), Coord(x,s), Coord(x,e)]
         for coord in elim_list:
             piece = self.get_piece(coord)
@@ -94,7 +94,7 @@ class Board:
             self._set_cell(Coord(x, y), line[x])
 
     def _set_cell(self, coord: Coord, piece: Piece):
-        cornerRange = [0, self._size - 1]
+        cornerRange = [self._start, self._size-self._start - 1]
         if coord.x in cornerRange and coord.y in cornerRange:
             return
         # if piece not in [EMPTY, BLACK, WHITE]:
@@ -248,7 +248,7 @@ class Board:
                 self._set_cell(piece, EMPTY)
 
     def is_inside(self, coord: Coord):
-        return coord.x in range(self._size) and coord.y in range(self._size)
+        return coord.x in range(self._start,self._size-self._start) and coord.y in range(self._start,self._size-self._start)
 
     def is_win(self, player: Piece = None):
         # u win if u have no enemy left
