@@ -24,9 +24,12 @@ class Player:
 
 
     def action(self, turns):
+        # To place piece on board return a tuple (x, y)
 
+        # To move a piece return nested tuple ((a, b), (c, d))
+
+        # to forfeit turn return 'None'
 
 
     def update(self, action):
-
-
+        # called by referee to update board and opponents move

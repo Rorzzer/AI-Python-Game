@@ -79,6 +79,10 @@ class Board:
             with suppress(ValueError):
                 self._index_black.remove(coord)
 
+    def evaluation_function(self):
+        # to be implemented
+        return
+
     def is_cell_valid(self, coord: Coord):
         return self.is_inside(coord) and self.get_piece(coord) == EMPTY
 
