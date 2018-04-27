@@ -1,4 +1,5 @@
 import math
+import copy
 from typing import List, TextIO
 
 from spatial_utils import Coord, Direction, add_direction, PAIRS
@@ -21,11 +22,13 @@ def get_enemy(player: Piece):
 
 
 class Board:
-    _board: List[List[Piece]] = []
-    _size: int = 0
 
-    _index_white: List[Coord] = []
-    _index_black: List[Coord] = []
+    def __init__(self):
+        self._board: List[List[Piece]] = []
+        self._size: int = 0
+
+        self._index_white: List[Coord] = []
+        self._index_black: List[Coord] = []
 
     def index(self, player: Piece):
         if player == WHITE:
@@ -82,6 +85,25 @@ class Board:
     def evaluation_function(self):
         # to be implemented
         return
+
+    def get_pieces_count(self, player: Piece):
+        return len(self.index(player))
+
+    def get_pieces_surrounded(self, player: Piece):
+        return len([piece for piece in self.index(player) if self.can_elim(piece)])
+
+    def get_pieces_adj(self, player: Piece, incl_corner: bool = True):
+        count_adj: int = 0
+        enemy = get_enemy(player)
+        adj_list = [enemy, CORNER] if incl_corner else [enemy]
+        for piece in self.index(player):
+            for dir in [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]:
+                if self.check(piece, dir, adj_list):
+                    count_adj+=1
+        return count_adj
+
+    def branch(self):
+        return copy.deepcopy(self)
 
     def is_cell_valid(self, coord: Coord):
         return self.is_inside(coord) and self.get_piece(coord) == EMPTY
