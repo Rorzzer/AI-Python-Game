@@ -38,8 +38,10 @@ def get_enemy(colour):
 def minimax(self, player, depth):
     board = player.board # current board
     colour = player.colour
+
     # nonlocal bestscore  #= float('-inf')
-    nonlocal bestmove
+    # nonlocal bestmove
+    current_depth = 0
 
     bestscore = float('-inf')
 
@@ -50,6 +52,8 @@ def minimax(self, player, depth):
         for move in moves:
             newboard = board.branch()
             newboard.move(piece, move)
+            # if depth < current_depth:
+            # current_depth =+ 1
             score = min_play(newboard, player)
             if score > bestscore:
                 bestmove = move
