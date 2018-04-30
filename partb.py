@@ -3,6 +3,8 @@
 #
 # TEAM The Dream Team
 
+from operator import itemgetter
+
 from watchurback import Board, BLACK, WHITE, Piece, get_enemy
 
 WHITE_STRING = "white"
@@ -40,7 +42,7 @@ class Player:
         # return move
         # else:
         #    return MiniMax(self, 10)
-        score, move = MiniMax(self).minimax(10)
+        score, move = MiniMax(self).minimax(3)
         self.board.move(move, self.colour)
         return move
 
@@ -70,7 +72,7 @@ class MiniMax:
 
     def _minimax(self, board: Board, depth: int, maximising: bool):
         if depth <= 0:
-            return board.evaluation_function(), None
+            return board.evaluation_function(self.player.colour if maximising else self.enemy_colour), None
         is_end = board.is_end()
         if isinstance(is_end, set):
             return 0, None
@@ -85,7 +87,8 @@ class MiniMax:
                 child = board.branch()
                 child.move(move, self.player.colour)
                 score, _ = self._minimax(child, depth - 1, False)
-                best = max(best, (score, move))
+                best = max(best, (score, move), key=itemgetter(0))
+                # print("Depth:",depth,"Score:",score,"Move:",move)
             return best
         else:
             best = (INF, None)
@@ -93,7 +96,7 @@ class MiniMax:
                 child = board.branch()
                 child.move(move, self.enemy_colour)
                 score, _ = self._minimax(child, depth - 1, True)
-                best = min(best, (score, move))
+                best = min(best, (score, move), key=itemgetter(0))
             return best
 
     # def minimax2(self):

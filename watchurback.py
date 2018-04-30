@@ -2,6 +2,8 @@ import copy
 import math
 from typing import List, TextIO
 
+from random import shuffle
+
 from spatial_utils import Coord, Direction, add_direction, PAIRS
 
 CORNER = 'X'
@@ -121,9 +123,7 @@ class Board:
     def evaluation_function(self, player: Piece):
         # this is very arbitrary
         enemy = get_enemy(player)
-        return 5.0 * self.get_pieces_count(player) - 3.0 * self.get_pieces_count(enemy) + \
-               3.0 * self.get_pieces_surrounded(enemy) - 2.0 * self.get_pieces_surrounded(player) + \
-               1.0 * self.get_pieces_adj(enemy) - 0.2 * self.get_pieces_adj(player)
+        return self.get_pieces_surrounded(enemy) - 0.3 * self.get_pieces_surrounded(player)
 
     def get_pieces_count(self, player: Piece):
         return len(self.index(player))
@@ -163,20 +163,21 @@ class Board:
         return valid
 
     def get_valid_moves_b(self, player: Piece):
-        if self.phase == 1:
+        if self._phase == 1:
             # placing phase
             y_offset = 0 if player is WHITE else 2
             starting_zone = [Coord(x, y) for x in range(0, 8) for y in range(y_offset, y_offset + 6)]
             corners = [Coord(x, y) for x in [0, 7] for y in [0, 7]]
             invalid = corners + self._index_white + self._index_black
             starting_zone = [coord for coord in starting_zone if coord not in invalid]
-            return starting_zone + [None]
-        elif self.phase == 2:
+            return starting_zone  # + [None]
+        elif self._phase == 2:
             # moving phase
-            moves = [None]
+            moves = []  # [None]
             for start in self.index(player):
                 for end in self.get_valid_moves(start):
                     moves += [(start, end)]
+            shuffle(moves)
             return moves
 
     def print_board(self):
@@ -257,7 +258,7 @@ class Board:
                 self._set_cell(c_to, player)
             else:
                 # this is a place move
-                self._set_cell(c_from, player)
+                self._set_cell(move, player)
         if lawful:
             self.elim_all(get_enemy(player))
             self.elim_all(player)

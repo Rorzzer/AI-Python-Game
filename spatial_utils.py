@@ -1,19 +1,6 @@
 from collections import namedtuple
 from enum import Enum
 
-WHITE = 'white'
-BLACK = 'black'
-UP = 'up'
-DOWN = 'down'
-LEFT = 'left'
-RIGHT = 'right'
-NONE = 'none'
-NEXT_TO = 1
-TWO_AWAY = 2
-corner1 = (0, 0)
-corner2 = (7, 0)
-corner3 = (0, 7)
-corner4 = (7, 7)
 
 class Coord(namedtuple('Coord', ['x', 'y'])):
     def __add__(self, other):
@@ -39,6 +26,7 @@ class Coord(namedtuple('Coord', ['x', 'y'])):
     def __str__(self):
         return '(' + str(self.x) + ', ' + str(self.y) + ')'
 
+
 class Direction(Enum):
     UP = Coord(0, -1)
     DOWN = Coord(0, 1)
@@ -53,4 +41,3 @@ PAIRS = [HORIZONTAL_PAIR, VERTICAL_PAIR]
 
 def add_direction(coord: Coord, direction: Direction, how_much: int = 1):
     return coord + (direction.value * how_much)
-
