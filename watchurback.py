@@ -1,5 +1,5 @@
-import math
 import copy
+import math
 from typing import List, TextIO
 
 from spatial_utils import Coord, Direction, add_direction, PAIRS
@@ -21,102 +21,17 @@ def get_enemy(colour):
         return colour
 
 
-# MINIMAX implementation
-
-class MiniMax:
-    bestmove = None
-    bestscore = float('-inf')
-    current_depth = 0
-    depth = 0
-
-    def __init__(self, player, depth):
-        self.player = player
-        self.depth = depth
-        self.board = self.player.board  # current board
-        # moves = board.get_valid_moves(self.player.colour)
-
-    def minimax(self, player):
-        colour = player.colour
-        # board = player.board  # current board
-
-        # nonlocal bestscore  #= float('-inf')
-        # nonlocal bestmove
-        # bestscore = float('-inf')
-
-        for piece in self.board.index(colour):
-            moves = self.board.get_valid_moves(piece)
-
-            for move in moves:
-                newboard = self.board.branch()
-                newboard.move(piece, move)
-
-                if self.depth < MiniMax.current_depth:
-                    MiniMax.current_depth += 1
-                    score = MiniMax.min_play(newboard, player)
-
-                if score > bestscore:
-                    MiniMax.bestmove = move
-                    bestscore = score
-
-                else:
-                    MiniMax.bestmove = moves[0]
-
-        return MiniMax.bestmove
-
-    def min_play(self, board, player):
-        colour = player.colour
-
-        # check if game is not over, to be implemented
-        if board.is_win() == colour:
-            return float('inf') #evaluation_function(board)
-        elif board.is_win() == get_enemy(colour):
-            return float('-inf') #-evalutation_fucntion(board)
-
-        bestscore = float('inf')
-
-        for piece in board.index(get_enemy(colour)):
-            moves = board.get_valid_moves(get_enemy(colour))
-
-            for move in moves:
-                newboard = board.branch()
-                newboard.move(piece, move)
-                score = MiniMax.max_play(newboard, player)
-
-                if score < bestscore:
-                    MiniMax.bestmove = move
-                    bestscore = score
-
-        return bestscore
-
-    def max_play(self, board, player):
-        if board.is_win() == player.colour:
-            return float('inf') #evaluation_function(board)
-        elif board.is_win() == get_enemy(player.colour):
-            return float('-inf') #-evalutation_fucntion(board)
-
-        bestscore = float('-inf')
-
-        for piece in board.index(get_enemy(player.colour)):
-            moves = board.get_valid_moves(get_enemy(player.colour))
-
-            for move in moves:
-                newboard = board.branch()
-                newboard.move(piece, move)
-                score = MiniMax.min_play(newboard, player)
-
-                if score > bestscore:
-                    MiniMax.bestmove = move
-                    bestscore = score
-
-        return bestscore
-
-
 class Board:
 
     def __init__(self):
         self._board: List[List[Piece]] = []
         self._size: int = 0
         self._start: int = 0
+        self._phase: int = 1
+        self._p1_w_count: int = 0
+        self._p1_b_count: int = 0
+        self._turn: int = 0
+        self._p2_turn: int = 0
 
         self._index_white: List[Coord] = []
         self._index_black: List[Coord] = []
@@ -139,29 +54,30 @@ class Board:
 
     def _set_corners(self):
         s = self._start
-        e = self._size-s-1
-        for y,x in [(s,s), (s,e), (e,s), (e,e)]:
-            self._board[y][x]  = CORNER
+        e = self._size - s - 1
+        for y, x in [(s, s), (s, e), (e, s), (e, e)]:
+            self._board[y][x] = CORNER
 
     def shrink(self):
         s = self._start
-        e = self._size-s-1
-        elim_list = [Coord(s+1,s+1),Coord(s+1,e-1),Coord(e-1,s+1),Coord(e-1,e-1)]
-        for x in range(s,e+1):
-            elim_list += [Coord(s,x), Coord(e,x), Coord(x,s), Coord(x,e)]
+        e = self._size - s - 1
+        elim_list = [Coord(s + 1, s + 1), Coord(s + 1, e - 1), Coord(e - 1, s + 1), Coord(e - 1, e - 1)]
+        for x in range(s, e + 1):
+            elim_list += [Coord(s, x), Coord(e, x), Coord(x, s), Coord(x, e)]
         for coord in elim_list:
             piece = self.get_piece(coord)
-            if piece in [BLACK,WHITE]:
+            if piece in [BLACK, WHITE]:
                 self.index(piece).remove(coord)
             self._board[coord.y][coord.x] = EMPTY
-        self._start+=1
+        self._start += 1
         self._set_corners()
-        s+=1
-        e-=1
+        s += 1
+        e -= 1
         # New corner squares eliminate nearby pieces
         # in order starting with the top-left new corner square and proceeding counter-clockwise
         # around the board.
-        elim_list = [Coord(s+1,s),Coord(s,s+1),Coord(s,e-1),Coord(s,e),Coord(e-1,e),Coord(e,e-1),Coord(e,s+1),Coord(e-1,s)]
+        elim_list = [Coord(s + 1, s), Coord(s, s + 1), Coord(s, e - 1), Coord(s, e), Coord(e - 1, e), Coord(e, e - 1),
+                     Coord(e, s + 1), Coord(e - 1, s)]
         for coord in elim_list:
             if self.can_elim(coord):
                 self._set_cell(coord, EMPTY)
@@ -184,7 +100,7 @@ class Board:
             self._set_cell(Coord(x, y), line[x])
 
     def _set_cell(self, coord: Coord, piece: Piece):
-        cornerRange = [self._start, self._size-self._start - 1]
+        cornerRange = [self._start, self._size - self._start - 1]
         if coord.x in cornerRange and coord.y in cornerRange:
             return
         # if piece not in [EMPTY, BLACK, WHITE]:
@@ -202,9 +118,12 @@ class Board:
             with suppress(ValueError):
                 self._index_black.remove(coord)
 
-    def evaluation_function(self, board):
-        # to be implemented
-        return #score
+    def evaluation_function(self, player: Piece):
+        # this is very arbitrary
+        enemy = get_enemy(player)
+        return 5.0 * self.get_pieces_count(player) - 3.0 * self.get_pieces_count(enemy) + \
+               3.0 * self.get_pieces_surrounded(enemy) - 2.0 * self.get_pieces_surrounded(player) + \
+               1.0 * self.get_pieces_adj(enemy) - 0.2 * self.get_pieces_adj(player)
 
     def get_pieces_count(self, player: Piece):
         return len(self.index(player))
@@ -219,7 +138,7 @@ class Board:
         for piece in self.index(player):
             for dir in [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]:
                 if self.check(piece, dir, adj_list):
-                    count_adj+=1
+                    count_adj += 1
         return count_adj
 
     def branch(self):
@@ -242,6 +161,23 @@ class Board:
                 if self.is_cell_valid(rel_coord):
                     valid.append(rel_coord)
         return valid
+
+    def get_valid_moves_b(self, player: Piece):
+        if self.phase == 1:
+            # placing phase
+            y_offset = 0 if player is WHITE else 2
+            starting_zone = [Coord(x, y) for x in range(0, 8) for y in range(y_offset, y_offset + 6)]
+            corners = [Coord(x, y) for x in [0, 7] for y in [0, 7]]
+            invalid = corners + self._index_white + self._index_black
+            starting_zone = [coord for coord in starting_zone if coord not in invalid]
+            return starting_zone + [None]
+        elif self.phase == 2:
+            # moving phase
+            moves = [None]
+            for start in self.index(player):
+                for end in self.get_valid_moves(start):
+                    moves += [(start, end)]
+            return moves
 
     def print_board(self):
         for row in self._board:
@@ -289,7 +225,7 @@ class Board:
     def get_piece(self, coord: Coord):
         return self._board[coord.y][coord.x]
 
-    def move(self, coord_from: Coord, coord_to: Coord, require_player: Piece = None, perform_elim: bool = True):
+    def move_a(self, coord_from: Coord, coord_to: Coord, require_player: Piece = None, perform_elim: bool = True):
         """move piece and validate move"""
         # TODO still missing validation for walk/jump size
         player = self.get_piece(coord_from)
@@ -308,6 +244,25 @@ class Board:
         if perform_elim:
             self.elim_all(get_enemy(player))
             self.elim_all(player)
+
+    def move(self, move, player: Piece, lawful: bool = True):
+        self._turn += 1
+        if self._phase == 2:
+            self._p2_turn += 1
+        if isinstance(move, tuple):
+            c_from, c_to = move
+            if isinstance(c_from, tuple):
+                # this is a walk/jump move
+                self._set_cell(c_from, EMPTY)
+                self._set_cell(c_to, player)
+            else:
+                # this is a place move
+                self._set_cell(c_from, player)
+        if lawful:
+            self.elim_all(get_enemy(player))
+            self.elim_all(player)
+            if self._p2_turn in [128, 192, 224]:
+                self.shrink()
 
     def check(self, coord: Coord, direction: Direction, for_pieces: List[Piece]):
         """ :returns True if the piece to the $direction of $coord is a piece of type $for_piece """
@@ -338,16 +293,34 @@ class Board:
                 self._set_cell(piece, EMPTY)
 
     def is_inside(self, coord: Coord):
-        return coord.x in range(self._start,self._size-self._start) and coord.y in range(self._start,self._size-self._start)
+        return coord.x in range(self._start, self._size - self._start) and coord.y in range(self._start,
+                                                                                            self._size - self._start)
 
     def is_win(self, player: Piece = None):
-        # u win if u have no enemy left
+        # part A: u win if u have no enemy left
         if player is not None:
             if len(self.index(get_enemy(player))) == 0:
                 return player
             else:
                 return
+        # if player is None, then caller just wants to know if theres a winner or not doesnt care who
         if self.is_win(WHITE):
             return WHITE
         else:
             return self.is_win(BLACK)
+
+    def is_end(self):
+        # part B: The game ends if either player has fewer than 2 pieces remaining. In this case, the player
+        # with 2 or more pieces remaining wins the game. If both players have fewer than 2 pieces
+        # remaining as a result of the same turn (for example, due to multiple pieces being eliminated
+        # during the shrinking of the board), then the game ends in a tie.
+        white_count = len(self._index_white)
+        black_count = len(self._index_black)
+        if white_count < 2 and black_count < 2:
+            return {WHITE, BLACK}  # tie is represented by a set containing both W&B
+        elif white_count < 2:
+            return BLACK
+        elif black_count < 2:
+            return WHITE
+        else:
+            return None
