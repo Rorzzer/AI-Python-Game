@@ -23,83 +23,92 @@ def get_enemy(colour):
 
 # MINIMAX implementation
 
-# class MiniMax:
-#     def __init__(self, player, depth):
-#         self.player = player
-#         self.colour = player.colour
-#         self.depth = depth
-#
-#         self.board = self.player.board  # current board
-#         moves = board.get_valid_moves(self.player.colour)
-#         bestmove = moves[0]
-#         bestscore = float('-inf')
-
-
-def minimax(self, player, depth):
-    board = player.board # current board
-    colour = player.colour
-
-    # nonlocal bestscore  #= float('-inf')
-    # nonlocal bestmove
+class MiniMax:
+    bestmove = None
+    bestscore = float('-inf')
     current_depth = 0
+    depth = 0
 
-    bestscore = float('-inf')
+    def __init__(self, player, depth):
+        self.player = player
+        self.depth = depth
+        self.board = self.player.board  # current board
+        # moves = board.get_valid_moves(self.player.colour)
 
-    for piece in board.index(colour):
-        moves = board.get_valid_moves(piece)
-        # bestmove = moves[0]
+    def minimax(self, player):
+        colour = player.colour
+        # board = player.board  # current board
 
-        for move in moves:
-            newboard = board.branch()
-            newboard.move(piece, move)
-            # if depth < current_depth:
-            # current_depth =+ 1
-            score = min_play(newboard, player)
-            if score > bestscore:
-                bestmove = move
-                bestscore = score
-    return bestmove
+        # nonlocal bestscore  #= float('-inf')
+        # nonlocal bestmove
+        # bestscore = float('-inf')
 
+        for piece in self.board.index(colour):
+            moves = self.board.get_valid_moves(piece)
 
-def min_play(self, board, player):
-    # check if game is not over, to be implemented
-    if board.is_win() == player.colour:
-        return float('inf') #evaluation_function(board)
-    elif board.is_win() == get_enemy(player.colour):
-        return float('-inf') #-evalutation_fucntion(board)
+            for move in moves:
+                newboard = self.board.branch()
+                newboard.move(piece, move)
 
-    bestscore = float('inf')
+                if self.depth < MiniMax.current_depth:
+                    MiniMax.current_depth += 1
+                    score = MiniMax.min_play(newboard, player)
 
-    for piece in board.index(get_enemy(player.colour)):
-        moves = board.get_valid_moves(get_enemy(player.colour))
-        for move in moves:
-            newboard = board.branch()
-            newboard.move(piece, move)
-            score = max_play(newboard, player)
-            if score < bestscore:
-                minimax.bestmove = move
-                bestscore = score
-    return bestscore
+                if score > bestscore:
+                    MiniMax.bestmove = move
+                    bestscore = score
 
+                else:
+                    MiniMax.bestmove = moves[0]
 
-def max_play(self, board, player):
-    if board.is_win() == player.colour:
-        return float('inf') #evaluation_function(board)
-    elif board.is_win() == get_enemy(player.colour):
-        return float('-inf') #-evalutation_fucntion(board)
+        return MiniMax.bestmove
 
-    bestscore = float('-inf')
+    def min_play(self, board, player):
+        colour = player.colour
 
-    for piece in board.index(get_enemy(player.colour)):
-        moves = board.get_valid_moves(get_enemy(player.colour))
-        for move in moves:
-            newboard = board.branch()
-            newboard.move(piece, move)
-            score = min_play(newboard, player)
-            if score > bestscore:
-                minimax.bestmove = move
-                bestscore = score
-    return bestscore
+        # check if game is not over, to be implemented
+        if board.is_win() == colour:
+            return float('inf') #evaluation_function(board)
+        elif board.is_win() == get_enemy(colour):
+            return float('-inf') #-evalutation_fucntion(board)
+
+        bestscore = float('inf')
+
+        for piece in board.index(get_enemy(colour)):
+            moves = board.get_valid_moves(get_enemy(colour))
+
+            for move in moves:
+                newboard = board.branch()
+                newboard.move(piece, move)
+                score = MiniMax.max_play(newboard, player)
+
+                if score < bestscore:
+                    MiniMax.bestmove = move
+                    bestscore = score
+
+        return bestscore
+
+    def max_play(self, board, player):
+        if board.is_win() == player.colour:
+            return float('inf') #evaluation_function(board)
+        elif board.is_win() == get_enemy(player.colour):
+            return float('-inf') #-evalutation_fucntion(board)
+
+        bestscore = float('-inf')
+
+        for piece in board.index(get_enemy(player.colour)):
+            moves = board.get_valid_moves(get_enemy(player.colour))
+
+            for move in moves:
+                newboard = board.branch()
+                newboard.move(piece, move)
+                score = MiniMax.min_play(newboard, player)
+
+                if score > bestscore:
+                    MiniMax.bestmove = move
+                    bestscore = score
+
+        return bestscore
 
 
 class Board:

@@ -39,15 +39,16 @@ class Player:
         turns = Turns
 
         if turns < 24:
-            return input("input a tuple with brackets: ")
+            # move = tuple(map(int, input("move:").split(',')))
+            # return move
         else:
-            return watchurback.minimax(self, 10)
+            return watchurback.MiniMax(self, 10)
 
     def update(self, action):
 
-        if action.turns < 24:
-            return
-        else:
-            self.board.move(action)
+        # if action.turns < 24:
+        #     return
+        # else:
+        #     self.board.move(action)
         # called by referee to update board and opponents move
         return
