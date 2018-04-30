@@ -16,18 +16,18 @@ BLACK = 'black'
 class Player:
 
     def __init__(self, colour):
+        self.board = Board.new_empty()
+
         if colour == WHITE:
             self.colour = WHITE
         elif colour == BLACK:
             self.colour = BLACK
-        else:
 
 
     def action(self, turns):
+
         # To place piece on board return a tuple (x, y)
-
         # To move a piece return nested tuple ((a, b), (c, d))
-
         # to forfeit turn return 'None'
 
 

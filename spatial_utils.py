@@ -39,7 +39,6 @@ class Coord(namedtuple('Coord', ['x', 'y'])):
     def __str__(self):
         return '(' + str(self.x) + ', ' + str(self.y) + ')'
 
-
 class Direction(Enum):
     UP = Coord(0, -1)
     DOWN = Coord(0, 1)
