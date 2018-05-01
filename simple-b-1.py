@@ -14,12 +14,17 @@ enemy.board._phase = 2
 
 turn = 0
 
+start = time.time()
+delta = start
+print("Game start")
 while [player, enemy][turn % 2].board.is_end() is None:
     [player, enemy][turn % 2].board.print_board()
     time.sleep(1)
     action = [player, enemy][turn % 2].action(turn)
     [enemy, player][turn % 2].update(action)
-    print([player.colour, enemy.colour][turn % 2], action)
+    now = time.time()
+    print([player.colour, enemy.colour][turn % 2], action, "t=", now - start, 'd=', now - delta)
+    delta = now
     turn += 1
 
 player.board.print_board()

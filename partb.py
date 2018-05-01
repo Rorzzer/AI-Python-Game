@@ -42,7 +42,7 @@ class Player:
         # return move
         # else:
         #    return MiniMax(self, 10)
-        score, move = MiniMax(self).minimax(3)
+        score, move = MiniMax(self).minimax(5)
         self.board.move(move, self.colour)
         return move
 
@@ -68,9 +68,9 @@ class MiniMax:
         # self.best_score = float('-inf')
 
     def minimax(self, depth: int):
-        return self._minimax(self.player.board, depth, True)
+        return self._minimax(self.player.board, depth, -INF, INF, True)
 
-    def _minimax(self, board: Board, depth: int, maximising: bool):
+    def _minimax(self, board: Board, depth: int, alpha: float, beta: float, maximising: bool):
         if depth <= 0:
             return board.evaluation_function(self.player.colour if maximising else self.enemy_colour), None
         is_end = board.is_end()
@@ -86,8 +86,11 @@ class MiniMax:
             for move in board.get_valid_moves_b(self.player.colour):
                 child = board.branch()
                 child.move(move, self.player.colour)
-                score, _ = self._minimax(child, depth - 1, False)
+                score, _ = self._minimax(child, depth - 1, alpha, beta, False)
                 best = max(best, (score, move), key=itemgetter(0))
+                alpha = max(alpha, best[0])
+                if beta <= alpha:
+                    break
                 # print("Depth:",depth,"Score:",score,"Move:",move)
             return best
         else:
@@ -95,8 +98,11 @@ class MiniMax:
             for move in board.get_valid_moves_b(self.enemy_colour):
                 child = board.branch()
                 child.move(move, self.enemy_colour)
-                score, _ = self._minimax(child, depth - 1, True)
+                score, _ = self._minimax(child, depth - 1, alpha, beta, True)
                 best = min(best, (score, move), key=itemgetter(0))
+                beta = min(beta, best[0])
+                if beta <= alpha:
+                    break
             return best
 
     # def minimax2(self):
