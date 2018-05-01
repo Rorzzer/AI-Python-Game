@@ -1,8 +1,7 @@
 import copy
 import math
-from typing import List, TextIO
-
 from random import shuffle
+from typing import List, TextIO
 
 from spatial_utils import Coord, Direction, add_direction, PAIRS
 
@@ -68,8 +67,10 @@ class Board:
             elim_list += [Coord(s, x), Coord(e, x), Coord(x, s), Coord(x, e)]
         for coord in elim_list:
             piece = self.get_piece(coord)
-            if piece in [BLACK, WHITE]:
-                self.index(piece).remove(coord)
+            if piece == BLACK:
+                self._index_black.remove(coord)
+            elif piece == WHITE:
+                self._index_white.remove(coord)
             self._board[coord.y][coord.x] = EMPTY
         self._start += 1
         self._set_corners()
@@ -120,10 +121,28 @@ class Board:
             with suppress(ValueError):
                 self._index_black.remove(coord)
 
-    def evaluation_function(self, player: Piece):
+    def evaluate_detail(self, player: Piece):
         # this is very arbitrary
         enemy = get_enemy(player)
-        return self.get_pieces_surrounded(enemy) - 0.3 * self.get_pieces_surrounded(player)
+        return self.get_pieces_surrounded(enemy) - 0.3 * self.get_pieces_surrounded(player) \
+               + 3 * self.get_pieces_count(player) - self.get_pieces_count(enemy) \
+               + 0.1 * self.get_pieces_adj(player, False) \
+               + 2 * self.middle_block_strategy(player, enemy)
+
+    def middle_block_strategy(self, player: Piece, enemy: Piece):
+        p_count = 0
+        for x in [3, 4]:
+            for y in [3, 4]:
+                piece = self.get_piece(Coord(x, y))
+                if piece == player:
+                    p_count += 1
+                elif piece == EMPTY:
+                    pass
+                elif piece == enemy:
+                    p_count -= 1
+                else:
+                    return 0
+        return p_count
 
     def get_pieces_count(self, player: Piece):
         return len(self.index(player))
@@ -170,6 +189,7 @@ class Board:
             corners = [Coord(x, y) for x in [0, 7] for y in [0, 7]]
             invalid = corners + self._index_white + self._index_black
             starting_zone = [coord for coord in starting_zone if coord not in invalid]
+            shuffle(starting_zone)
             return starting_zone  # + [None]
         elif self._phase == 2:
             # moving phase
@@ -177,12 +197,14 @@ class Board:
             for start in self.index(player):
                 for end in self.get_valid_moves(start):
                     moves += [(start, end)]
-            shuffle(moves)
+            # shuffle(moves)
             return moves
 
     def print_board(self):
-        for row in self._board:
-            print(' '.join(row))
+        s = self._start
+        e = self._size - s
+        for row in self._board[s:e]:
+            print(' '.join(row[s:e]))
 
     def get_min_dist(self, coord_from: Coord, coord_to: Coord, dest_empty: bool = False):
         """return a tuple (distance, route) of the shortest route from to to"""
@@ -259,11 +281,22 @@ class Board:
             else:
                 # this is a place move
                 self._set_cell(move, player)
+                if player == WHITE:
+                    self._p1_w_count += 1
+                elif player == BLACK:
+                    self._p1_b_count += 1
         if lawful:
+            if self._phase == 1 and self._p1_w_count == 12 and self._p1_b_count == 12:
+                self._phase = 2
+            pc = self.get_pieces_count(player)
+            ec = self.get_pieces_count(get_enemy(player))
             self.elim_all(get_enemy(player))
             self.elim_all(player)
             if self._p2_turn in [128, 192, 224]:
                 self.shrink()
+            pc -= self.get_pieces_count(player)
+            ec -= self.get_pieces_count(get_enemy(player))
+            return ec - pc
 
     def check(self, coord: Coord, direction: Direction, for_pieces: List[Piece]):
         """ :returns True if the piece to the $direction of $coord is a piece of type $for_piece """
@@ -315,6 +348,8 @@ class Board:
         # with 2 or more pieces remaining wins the game. If both players have fewer than 2 pieces
         # remaining as a result of the same turn (for example, due to multiple pieces being eliminated
         # during the shrinking of the board), then the game ends in a tie.
+        if self._phase != 2:
+            return None
         white_count = len(self._index_white)
         black_count = len(self._index_black)
         if white_count < 2 and black_count < 2:
