@@ -16,8 +16,8 @@ INF = float("inf")
 class Player:
     min_depth = 1
     max_depth = 10
-    fast_mark = 0.2
-    slow_mark = 2
+    fast_mark = 0.4
+    slow_mark = 2.2
 
     def __init__(self, colour_string: str):
         self.board: Board = Board.new_empty()
@@ -49,10 +49,17 @@ class Player:
         # else:
         #    return MiniMax(self, 10)
         start = time.time()
-        #if self.board._phase == 1:
+        # if self.board._phase == 1:
         #    self.target_depth = 1
         print("depth=", self.target_depth)
-        score, move = MiniMax(self).minimax(self.target_depth)
+        if self.board._phase == 1:
+            aggressive = 0.4
+        else:
+            if self.board.get_pieces_count(self.colour) / self.board.get_pieces_count(self.enemy_colour) > 1.2:
+                aggressive = 0.8
+            else:
+                aggressive = 0.6
+        score, move = MiniMax(self, aggressive).minimax(self.target_depth)
         end = time.time() - start
         if end < Player.fast_mark and self.target_depth < Player.max_depth:
             print("too fast, adding depth")
@@ -78,9 +85,10 @@ class Player:
 
 class MiniMax:
 
-    def __init__(self, player: Player):
+    def __init__(self, player: Player, aggressive: float):
         self.player: Player = player
         self.enemy_colour: Piece = get_enemy(player.colour)
+        self.aggressive = aggressive
         # self.best_move = None
         # self.best_score = float('-inf')
 
@@ -89,7 +97,7 @@ class MiniMax:
 
     def _minimax(self, board: Board, depth: int, alpha: float, beta: float, maximising: bool):
         if depth <= 0:
-            return board.evaluate_detail(self.player.colour), None
+            return board.evaluate_detail(self.player.colour, self.enemy_colour, self.aggressive), None
         is_end = board.is_end()
         if isinstance(is_end, set):
             return 0, None

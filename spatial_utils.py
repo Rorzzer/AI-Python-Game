@@ -1,5 +1,4 @@
 from collections import namedtuple
-from enum import Enum
 
 
 class Coord(namedtuple('Coord', ['x', 'y'])):
@@ -27,17 +26,21 @@ class Coord(namedtuple('Coord', ['x', 'y'])):
         return '(' + str(self.x) + ', ' + str(self.y) + ')'
 
 
-class Direction(Enum):
-    UP = Coord(0, -1)
-    DOWN = Coord(0, 1)
-    LEFT = Coord(-1, 0)
-    RIGHT = Coord(1, 0)
+UP = Coord(0, -1)
+DOWN = Coord(0, 1)
+LEFT = Coord(-1, 0)
+RIGHT = Coord(1, 0)
 
+ALL_DIRECTIONS = [UP, DOWN, LEFT, RIGHT]
 
-HORIZONTAL_PAIR = [Direction.LEFT, Direction.RIGHT]
-VERTICAL_PAIR = [Direction.UP, Direction.DOWN]
+HORIZONTAL_PAIR = [LEFT, RIGHT]
+VERTICAL_PAIR = [UP, DOWN]
 PAIRS = [HORIZONTAL_PAIR, VERTICAL_PAIR]
 
 
-def add_direction(coord: Coord, direction: Direction, how_much: int = 1):
-    return coord + (direction.value * how_much)
+def add_direction(coord: Coord, direction: Coord, how_much: int = 1):
+    # extremely slow (from profiling)
+    # return coord + (direction.value * how_much)
+    x, y = coord
+    dx, dy = direction
+    return Coord(x + dx * how_much, y + dy * how_much)
