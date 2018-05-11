@@ -6,7 +6,7 @@
 import time
 from operator import itemgetter
 
-from watchurback import Board, BLACK, WHITE, Piece, get_enemy
+from watchurback1 import Board, BLACK, WHITE, Piece, get_enemy
 
 WHITE_STRING = "white"
 BLACK_STRING = "black"
@@ -15,14 +15,14 @@ INF = float("inf")
 
 class Player:
     min_depth = 1
-    max_depth = 20
+    max_depth = 10
     fast_mark = 0.4
     slow_mark = 2.2
 
     def __init__(self, colour_string: str):
         self.board: Board = Board.new_empty()
         self.colour: Piece
-        self.target_depth = 4
+        self.target_depth = 2
 
         # input_file = open("/sample_files/massacre-sample-6.in")
 

@@ -1,7 +1,7 @@
 # Part A
 # File: parta.py
 #
-# TEAM ...
+# TEAM The Dream Team
 
 import sys
 
