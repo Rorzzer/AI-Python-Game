@@ -1,7 +1,9 @@
+import copy
 import math
-from typing import List, TextIO
+from random import shuffle
+from typing import List, TextIO, Set
 
-from spatial_utils import Coord, Direction, add_direction, PAIRS
+from spatial_utils import Coord, ALL_DIRECTIONS, add_direction, PAIRS
 
 CORNER = 'X'
 WHITE = 'O'
@@ -11,27 +13,36 @@ EMPTY = '-'
 Piece = str
 
 
-def get_enemy(player: Piece):
-    if player == WHITE:
+def get_enemy(colour):
+    if colour == WHITE:
         return BLACK
-    elif player == BLACK:
+    elif colour == BLACK:
         return WHITE
     else:
-        return player
+        return colour
 
 
 class Board:
-    _board: List[List[Piece]] = []
-    _size: int = 0
 
-    _index_white: List[Coord] = []
-    _index_black: List[Coord] = []
+    def __init__(self):
+        self._board: List[List[Piece]] = []
+        self._size: int = 0
+        self._start: int = 0
+        self._end: int = 0
+        self._phase: int = 1
+        self._p1_w_count: int = 0
+        self._p1_b_count: int = 0
+        self._turn: int = 0
+        self._p2_turn: int = 0
+
+        self._index_white: Set[Coord] = set()
+        self._index_black: Set[Coord] = set()
 
     def index(self, player: Piece):
         if player == WHITE:
-            return list(self._index_white)
+            return set(self._index_white)
         elif player == BLACK:
-            return list(self._index_black)
+            return set(self._index_black)
         else:
             raise ValueError('Player is either WHITE(O) or BLACK(@). Received ' + player)
 
@@ -40,8 +51,47 @@ class Board:
         board = Board()
         board._size = size
         board._board = [[EMPTY for _ in range(size)] for _ in range(size)]
-        board._board[0][0] = board._board[0][-1] = board._board[-1][0] = board._board[-1][-1] = CORNER
+        board._set_corners()
+        board.update_end()
         return board
+
+    def _set_corners(self):
+        s = self._start
+        e = self._size - s - 1
+        for x in [s, e]:
+            for y in [s, e]:
+                self._board[y][x] = CORNER
+
+    def update_end(self):
+        self._end = self._size - self._start
+
+    def shrink(self):
+        s = self._start
+        e = self._size - s - 1
+        elim_list: List[Coord] = [Coord(s + 1, s + 1), Coord(s + 1, e - 1), Coord(e - 1, s + 1), Coord(e - 1, e - 1)]
+        for x in range(s, e + 1):
+            elim_list += [Coord(s, x), Coord(e, x), Coord(x, s), Coord(x, e)]
+        for coord in elim_list:
+            piece = self.get_piece(coord)
+            if piece == BLACK:
+                self._index_black.remove(coord)
+            elif piece == WHITE:
+                self._index_white.remove(coord)
+            self._board[coord.y][coord.x] = EMPTY
+        self._start += 1
+        self._set_corners()
+        s += 1
+        e -= 1
+
+        # New corner squares eliminate nearby pieces
+        # in order starting with the top-left new corner square and proceeding counter-clockwise
+        # around the board.
+        elim_list = [Coord(s + 1, s), Coord(s, s + 1), Coord(s, e - 1), Coord(s, e), Coord(e - 1, e), Coord(e, e - 1),
+                     Coord(e, s + 1), Coord(e - 1, s)]
+        for coord in elim_list:
+            if self.can_elim(coord):
+                self._set_cell(coord, EMPTY)
+        self.update_end()
 
     @classmethod
     def from_file(cls, file: TextIO, size: int = None):
@@ -52,6 +102,7 @@ class Board:
         board._set_row(0, first_line)
         for y in range(1, size):
             board._set_row(y, file.readline().strip().split(' '))
+        board.update_end()
         return board
 
     def _set_row(self, y: int, line: List[Piece]):
@@ -61,23 +112,76 @@ class Board:
             self._set_cell(Coord(x, y), line[x])
 
     def _set_cell(self, coord: Coord, piece: Piece):
-        cornerRange = [0, self._size - 1]
-        if coord.x in cornerRange and coord.y in cornerRange:
-            return
+        # cornerRange = {self._start, self._size - self._start - 1}
+        # if coord.x in cornerRange and coord.y in cornerRange:
+        #    return
         # if piece not in [EMPTY, BLACK, WHITE]:
         # WARNING illegal piece
         self._board[coord.y][coord.x] = piece
         if piece == WHITE:
-            self._index_white.append(coord)
+            self._index_white.add(coord)
         elif piece == BLACK:
-            self._index_black.append(coord)
+            self._index_black.add(coord)
         elif piece == EMPTY:
-            # suppress ValueError because remove is noisy when index doesnt exist
-            from contextlib import suppress
-            with suppress(ValueError):
-                self._index_white.remove(coord)
-            with suppress(ValueError):
-                self._index_black.remove(coord)
+            self._index_white.discard(coord)
+            self._index_black.discard(coord)
+
+    def evaluate_detail(self, player: Piece, enemy: Piece, aggressive: float):
+        # this is very arbitrary
+        conservative = 1 - aggressive
+        health = 3 * aggressive * self.get_pieces_surrounded(enemy) - conservative * self.get_pieces_surrounded(player) \
+                 + 5 * conservative * self.get_pieces_count(player) - aggressive * self.get_pieces_count(enemy) \
+                 + 0.1 * self.get_pieces_adj(player, False) \
+                 + self.middle_block_strategy(player, enemy)
+        if 118 <= self._p2_turn > 128:
+            health -= len([coord for coord in self.index(player) if not {coord.x, coord.y}.isdisjoint({0, 7})])
+        elif 182 <= self._p2_turn < 192:
+            health -= len([coord for coord in self.index(player) if not {coord.x, coord.y}.isdisjoint({1, 6})])
+        elif 214 <= self._p2_turn < 224:
+            health -= len([coord for coord in self.index(player) if not {coord.x, coord.y}.isdisjoint({2, 5})])
+        return health
+
+    def middle_block_strategy(self, player: Piece, enemy: Piece):
+        p_count = 0
+        for x in [3, 4]:
+            for y in [3, 4]:
+                piece = self.get_piece(Coord(x, y))
+                if piece == player:
+                    p_count += 1
+                elif piece == EMPTY:
+                    pass
+                elif piece == enemy:
+                    p_count -= 1
+                else:
+                    return 0
+        return p_count
+
+    def get_pieces_count(self, player: Piece):
+        return len(self.index(player))
+
+    def get_pieces_surrounded(self, player: Piece):
+        return len([piece for piece in self.index(player) if self.can_elim(piece)])
+
+    def get_pieces_adj(self, player: Piece, incl_corner: bool = True):
+        count_adj: int = 0
+        enemy = get_enemy(player)
+        adj_list = {enemy}
+        if incl_corner:
+            adj_list.add(CORNER)
+        for piece in self.index(player):
+            for direction in ALL_DIRECTIONS:
+                if self.check(piece, direction, adj_list):
+                    count_adj += 1
+        return count_adj
+
+    def branch(self):
+        # return copy.deepcopy(self) # very slow
+        new = copy.copy(self)
+        # only the board and indexes need deep copying
+        new._board = [[piece for piece in row] for row in new._board]
+        new._index_white = new._index_white.copy()
+        new._index_black = new._index_black.copy()
+        return new
 
     def is_cell_valid(self, coord: Coord):
         return self.is_inside(coord) and self.get_piece(coord) == EMPTY
@@ -85,7 +189,7 @@ class Board:
     def get_valid_moves(self, coord: Coord):
         valid = []
         # try walk, else then try jump
-        for direction in Direction:
+        for direction in ALL_DIRECTIONS:
             # try walk
             rel_coord = add_direction(coord, direction)
             if self.is_cell_valid(rel_coord):
@@ -97,9 +201,28 @@ class Board:
                     valid.append(rel_coord)
         return valid
 
+    def get_valid_moves_b(self, player: Piece):
+        if self._phase == 1:
+            # placing phase
+            y_offset = 0 if player is WHITE else 2
+            starting_zone = [Coord(x, y) for x in range(0, 8) for y in range(y_offset, y_offset + 6)]
+            corners = {Coord(x, y) for x in [0, 7] for y in [0, 7]}
+            invalid = corners | self._index_white | self._index_black
+            starting_zone = [coord for coord in starting_zone if coord not in invalid]
+            shuffle(starting_zone)
+            return starting_zone  # + [None]
+        elif self._phase == 2:
+            # moving phase
+            moves = []  # [None]
+            for start in self.index(player):
+                for end in self.get_valid_moves(start):
+                    moves.append((start, end))
+            # shuffle(moves)
+            return moves
+
     def print_board(self):
-        for row in self._board:
-            print(' '.join(row))
+        for row in self._board[self._start:self._end]:
+            print(' '.join(row[self._start:self._end]))
 
     def get_min_dist(self, coord_from: Coord, coord_to: Coord, dest_empty: bool = False):
         """return a tuple (distance, route) of the shortest route from to to"""
@@ -119,7 +242,7 @@ class Board:
             if coord_to in valid_moves:
                 return inner_route + [coord_to]
             # suicidal if surrounded by corner or enemy
-            valid_moves = [move for move in valid_moves if not self.is_surrounded(move, [CORNER, enemy])]
+            valid_moves = [move for move in valid_moves if not self.is_surrounded(move, {CORNER, enemy})]
             for move in valid_moves:
                 if move not in inner_route:
                     next_route = dfs(inner_route + [move], inner_depth - 1)
@@ -143,7 +266,7 @@ class Board:
     def get_piece(self, coord: Coord):
         return self._board[coord.y][coord.x]
 
-    def move(self, coord_from: Coord, coord_to: Coord, require_player: Piece = None, perform_elim: bool = True):
+    def move_a(self, coord_from: Coord, coord_to: Coord, require_player: Piece = None, perform_elim: bool = True):
         """move piece and validate move"""
         # TODO still missing validation for walk/jump size
         player = self.get_piece(coord_from)
@@ -163,7 +286,37 @@ class Board:
             self.elim_all(get_enemy(player))
             self.elim_all(player)
 
-    def check(self, coord: Coord, direction: Direction, for_pieces: List[Piece]):
+    def move(self, move, player: Piece, lawful: bool = True):
+        self._turn += 1
+        if self._phase == 2:
+            self._p2_turn += 1
+        if isinstance(move, tuple):
+            c_from, c_to = move
+            if isinstance(c_from, tuple):
+                # this is a walk/jump move
+                self._set_cell(c_from, EMPTY)
+                self._set_cell(c_to, player)
+            else:
+                # this is a place move
+                self._set_cell(move, player)
+                if player == WHITE:
+                    self._p1_w_count += 1
+                elif player == BLACK:
+                    self._p1_b_count += 1
+        if lawful:
+            if self._phase == 1 and self._p1_w_count == 12 and self._p1_b_count == 12:
+                self._phase = 2
+            pc = self.get_pieces_count(player)
+            ec = self.get_pieces_count(get_enemy(player))
+            self.elim_all(get_enemy(player))
+            self.elim_all(player)
+            if self._p2_turn in {128, 192, 224}:
+                self.shrink()
+            pc -= self.get_pieces_count(player)
+            ec -= self.get_pieces_count(get_enemy(player))
+            return ec - pc
+
+    def check(self, coord: Coord, direction: Coord, for_pieces: Set[Piece]):
         """ :returns True if the piece to the $direction of $coord is a piece of type $for_piece """
         rel_coord = add_direction(coord, direction)
         if not self.is_inside(rel_coord):
@@ -174,12 +327,12 @@ class Board:
 
     def can_elim(self, coord: Coord):
         player = self.get_piece(coord)
-        if player not in [WHITE, BLACK]:
+        if player not in {WHITE, BLACK}:
             # it breaks the law of physics to delete empty space without black holes
             return False
-        return self.is_surrounded(coord, [get_enemy(player), CORNER])
+        return self.is_surrounded(coord, {get_enemy(player), CORNER})
 
-    def is_surrounded(self, coord: Coord, by: List[Piece]):
+    def is_surrounded(self, coord: Coord, by: Set[Piece]):
         """ is coord surrounded by a type of piece """
         for dirs in PAIRS:
             if self.check(coord, dirs[0], by) and self.check(coord, dirs[1], by):
@@ -192,16 +345,35 @@ class Board:
                 self._set_cell(piece, EMPTY)
 
     def is_inside(self, coord: Coord):
-        return coord.x in range(self._size) and coord.y in range(self._size)
+        return self._start <= coord.x < self._end and self._start <= coord.y < self._end
 
     def is_win(self, player: Piece = None):
-        # u win if u have no enemy left
+        # part A: u win if u have no enemy left
         if player is not None:
             if len(self.index(get_enemy(player))) == 0:
                 return player
             else:
                 return
+        # if player is None, then caller just wants to know if theres a winner or not doesnt care who
         if self.is_win(WHITE):
             return WHITE
         else:
             return self.is_win(BLACK)
+
+    def is_end(self):
+        # part B: The game ends if either player has fewer than 2 pieces remaining. In this case, the player
+        # with 2 or more pieces remaining wins the game. If both players have fewer than 2 pieces
+        # remaining as a result of the same turn (for example, due to multiple pieces being eliminated
+        # during the shrinking of the board), then the game ends in a tie.
+        if self._phase != 2:
+            return None
+        white_count = len(self._index_white)
+        black_count = len(self._index_black)
+        if white_count < 2 and black_count < 2:
+            return {WHITE, BLACK}  # tie is represented by a set containing both W&B
+        elif white_count < 2:
+            return BLACK
+        elif black_count < 2:
+            return WHITE
+        else:
+            return None
